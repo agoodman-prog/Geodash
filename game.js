@@ -10,6 +10,10 @@ const gravity = 0.8;
 const jumpPower = -15;
 let gameSpeed = 6; // Speed of the game
 
+// Background settings
+let backgroundX = 0;
+let backgroundSpeed = 2;
+
 // The player object
 let player = {
   x: 100,
@@ -44,6 +48,9 @@ document.addEventListener("keydown", (e) => {
   if (e.code === "Space") {
     isSpacePressed = true;
   }
+  if (e.code === "KeyR" && isGameOver) {
+    resetGame();  // Restart the game when "R" is pressed
+  }
 });
 
 document.addEventListener("keyup", (e) => {
@@ -59,6 +66,18 @@ document.addEventListener("mousedown", () => {
 document.addEventListener("mouseup", () => {
   isMouseDown = false;
 });
+
+// Draw the background
+function drawBackground() {
+  ctx.fillStyle = '#1e1e1e';
+  ctx.fillRect(backgroundX, 0, canvas.width, canvas.height); // Draw background
+
+  // Scroll the background
+  backgroundX -= backgroundSpeed;
+  if (backgroundX <= -canvas.width) {
+    backgroundX = 0; // Loop background
+  }
+}
 
 // Draw the player in different modes
 function drawPlayer() {
@@ -148,16 +167,6 @@ function checkCollision() {
   });
 }
 
-// Handle game over logic
-function gameOver() {
-  isGameOver = true;
-  ctx.fillStyle = "white";
-  ctx.font = "50px Arial";
-  ctx.fillText("Game Over!", canvas.width / 2 - 150, canvas.height / 2);
-  ctx.font = "30px Arial";
-  ctx.fillText("Press R to Restart", canvas.width / 2 - 100, canvas.height / 2 + 50);
-}
-
 // Update score and level
 function updateScore() {
   score++;
@@ -168,7 +177,7 @@ function updateScore() {
   document.getElementById("score").innerText = "Score: " + score;
 }
 
-// Reset game to initial state
+// Reset the game to initial state
 function resetGame() {
   player.y = canvas.height - 150;
   player.velocityY = 0;
@@ -180,17 +189,25 @@ function resetGame() {
   isGameOver = false;
 }
 
+// Handle game over logic
+function gameOver() {
+  isGameOver = true;
+  ctx.fillStyle = "white";
+  ctx.font = "50px Arial";
+  ctx.fillText("Game Over!", canvas.width / 2 - 150, canvas.height / 2);
+  ctx.font = "30px Arial";
+  ctx.fillText("Press R to Restart", canvas.width / 2 - 100, canvas.height / 2 + 50);
+}
+
 // Main game loop
 function update() {
   if (isGameOver) {
-    if (isSpacePressed) {
-      resetGame();
-    }
-    return;
+    return; // Stop the game loop when it's over
   }
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+  
+  drawBackground(); // Draw background first
   handleGravity();
   handleJumping();
   handlePortals();
