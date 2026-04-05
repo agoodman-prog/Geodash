@@ -7,14 +7,14 @@ canvas.height = window.innerHeight;
 
 // Game settings
 const gravity = 0.8;
-const jumpPower = -15;
+const jumpPower = -12;
 let gameSpeed = 6; // Speed of the game
 
 // Background settings
 let backgroundX = 0;
 let backgroundSpeed = 2;
 
-// The player object
+// Player settings
 let player = {
   x: 100,
   y: canvas.height - 150,
@@ -25,15 +25,12 @@ let player = {
   isJumping: false,
   isFalling: false,
   rotation: 0, // To control rotation when jumping
-  spinSpeed: 5 // Speed of spinning (rotation) during jump
+  spinSpeed: 10, // Speed of spinning (rotation) during jump
+  grounded: true // Whether the player is grounded
 };
 
 // Ground settings
 let groundHeight = 50; // Height of the red ground
-
-// Score and level variables
-let score = 0;
-let level = 1;
 
 // Obstacles
 let obstacles = [];
@@ -48,6 +45,10 @@ let portals = [
 let isGameOver = false;
 let isSpacePressed = false;
 let isMouseDown = false;
+
+// Score and level variables
+let score = 0;
+let level = 1;
 
 document.addEventListener("keydown", (e) => {
   if (e.code === "Space") {
@@ -96,7 +97,7 @@ function drawPlayer() {
   ctx.translate(player.x + player.width / 2, player.y + player.height / 2); // Move to player center
   ctx.rotate(player.rotation * Math.PI / 180); // Rotate by the current rotation value in radians
   ctx.fillStyle = '#ff4f4f'; // Default color (cube)
-  
+
   if (player.mode === 'ship') {
     ctx.fillStyle = '#4f87ff';
     ctx.beginPath();
@@ -130,15 +131,17 @@ function handleGravity() {
     player.isJumping = false;
     player.isFalling = false;
     player.rotation = 0; // Reset rotation when landing
+    player.grounded = true;
   }
 }
 
 // Handle the player's jumping
 function handleJumping() {
-  if ((isSpacePressed || isMouseDown) && !player.isJumping && player.y === canvas.height - groundHeight - player.height) {
+  if ((isSpacePressed || isMouseDown) && !player.isJumping && player.grounded) {
     player.isJumping = true;
     player.velocityY = jumpPower;
     player.rotation = 0; // Start from no rotation when jumping
+    player.grounded = false; // Player is not grounded while jumping
   }
 
   // If the player is jumping, rotate them
@@ -165,7 +168,7 @@ function handlePortals() {
 function createObstacles() {
   if (Math.random() < 0.02) {
     let obstacleHeight = Math.random() * 100 + 50;
-    obstacles.push({ x: canvas.width, y: canvas.height - obstacleHeight, width: 50, height: obstacleHeight });
+    obstacles.push({ x: canvas.width, y: canvas.height - obstacleHeight - groundHeight, width: 50, height: obstacleHeight });
   }
 
   obstacles.forEach(obstacle => {
@@ -210,6 +213,7 @@ function resetGame() {
   player.velocityY = 0;
   player.mode = 'cube';
   player.rotation = 0;
+  player.grounded = true;
   score = 0;
   level = 1;
   gameSpeed = 6;
@@ -244,9 +248,4 @@ function update() {
   drawObstacles();
   drawPlayer();
   updateScore();
-  checkCollision();
-
-  requestAnimationFrame(update);
-}
-
-update();
+  checkCollision
