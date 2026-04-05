@@ -23,8 +23,13 @@ let player = {
   velocityY: 0,
   mode: 'cube', // Modes: 'cube', 'ship', 'wave'
   isJumping: false,
-  isFalling: false
+  isFalling: false,
+  rotation: 0, // To control rotation when jumping
+  spinSpeed: 5 // Speed of spinning (rotation) during jump
 };
+
+// Ground settings
+let groundHeight = 50; // Height of the red ground
 
 // Score and level variables
 let score = 0;
@@ -79,25 +84,37 @@ function drawBackground() {
   }
 }
 
-// Draw the player in different modes
+// Draw the red ground underneath the player
+function drawGround() {
+  ctx.fillStyle = '#ff4f4f'; // Red color for the ground
+  ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+}
+
+// Draw the player with spinning animation
 function drawPlayer() {
+  ctx.save(); // Save the current canvas state
+  ctx.translate(player.x + player.width / 2, player.y + player.height / 2); // Move to player center
+  ctx.rotate(player.rotation * Math.PI / 180); // Rotate by the current rotation value in radians
   ctx.fillStyle = '#ff4f4f'; // Default color (cube)
+  
   if (player.mode === 'ship') {
     ctx.fillStyle = '#4f87ff';
     ctx.beginPath();
-    ctx.moveTo(player.x, player.y);
-    ctx.lineTo(player.x + player.width, player.y - player.height);
-    ctx.lineTo(player.x + 2 * player.width, player.y);
+    ctx.moveTo(-player.width / 2, player.height / 2);
+    ctx.lineTo(player.width / 2, -player.height / 2);
+    ctx.lineTo(player.width, player.height / 2);
     ctx.closePath();
     ctx.fill();
   } else if (player.mode === 'wave') {
     ctx.fillStyle = '#f8f8f8';
     ctx.beginPath();
-    ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width / 2, 0, Math.PI * 2);
+    ctx.arc(0, 0, player.width / 2, 0, Math.PI * 2);
     ctx.fill();
   } else {
-    ctx.fillRect(player.x, player.y, player.width, player.height);
+    ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
   }
+
+  ctx.restore(); // Restore the previous canvas state
 }
 
 // Apply gravity and jumping logic
@@ -107,19 +124,29 @@ function handleGravity() {
   }
   player.y += player.velocityY;
 
-  if (player.y >= canvas.height - 150) {
-    player.y = canvas.height - 150;
+  if (player.y >= canvas.height - groundHeight - player.height) {
+    player.y = canvas.height - groundHeight - player.height;
     player.velocityY = 0;
     player.isJumping = false;
     player.isFalling = false;
+    player.rotation = 0; // Reset rotation when landing
   }
 }
 
 // Handle the player's jumping
 function handleJumping() {
-  if ((isSpacePressed || isMouseDown) && !player.isJumping && player.y === canvas.height - 150) {
+  if ((isSpacePressed || isMouseDown) && !player.isJumping && player.y === canvas.height - groundHeight - player.height) {
     player.isJumping = true;
     player.velocityY = jumpPower;
+    player.rotation = 0; // Start from no rotation when jumping
+  }
+
+  // If the player is jumping, rotate them
+  if (player.isJumping) {
+    player.rotation += player.spinSpeed; // Increase rotation speed when jumping
+    if (player.rotation >= 360) {
+      player.rotation = 0; // Reset rotation after a full spin
+    }
   }
 }
 
@@ -182,6 +209,7 @@ function resetGame() {
   player.y = canvas.height - 150;
   player.velocityY = 0;
   player.mode = 'cube';
+  player.rotation = 0;
   score = 0;
   level = 1;
   gameSpeed = 6;
@@ -208,6 +236,7 @@ function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
   drawBackground(); // Draw background first
+  drawGround(); // Draw red ground
   handleGravity();
   handleJumping();
   handlePortals();
